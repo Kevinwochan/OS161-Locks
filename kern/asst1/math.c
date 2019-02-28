@@ -39,8 +39,8 @@ struct semaphore *finished;
  * ADD YOUR OWN VARIABLES HERE AS NEEDED
  * **********************************************************************
  */
-
-
+/* Used to run the adders exclusively */
+struct semaphore *mutex;
 
 /*
  * adder()
@@ -76,7 +76,8 @@ static void adder(void * unusedpointer, unsigned long addernumber)
         while (flag) {
                 /* loop doing increments until we achieve the overall number
                    of increments */
-
+                /* BEGIN Critcal Region */
+                P(mutex);
                 a = counter;
                 if (a < NADDS) {
                         counter = counter + 1;
@@ -98,6 +99,8 @@ static void adder(void * unusedpointer, unsigned long addernumber)
                 } else {
                         flag = 0;
                 }
+                V(mutex);
+                /* END Critical Region */
         }
 
         /* signal the main thread we have finished and then exit */
@@ -149,6 +152,8 @@ int maths (int data1, char **data2)
 
         kprintf("Starting %d adder threads\n", NADDERS);
 
+        /* create a semaphore to control the adders */
+        mutex = sem_create("adder_mutex", 1);
         for (index = 0; index < NADDERS; index++) {
 
                 error = thread_fork("adder thread", NULL, &adder, NULL, index);
