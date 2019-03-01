@@ -12,7 +12,7 @@
 
 static struct lock *locka, *lockb;
 static struct semaphore *finished;
-static struct semaphore *mutexa, *mutexb;
+static struct semaphore *mutex;
 
 /* a constant indicating how many times the locking loops go round */
 #define NUM_LOOPS 1000
@@ -30,24 +30,23 @@ static void bill(void * unusedpointer, unsigned long unusedint)
         kprintf("Hi, I'm Bill\n");
 
         for (i = 0; i < NUM_LOOPS; i++) {
-                P(mutexa);
+                P(mutex);
                 lock_acquire(locka);
                 
                 holds_locka();          /* Critical section */
                 
                 lock_release(locka);
-                V(mutexa);
+                V(mutex);
 
-                P(mutexb);
+                P(mutex);
                 lock_acquire(lockb);
                 
                 holds_lockb();          /* Critical section */
                 
                 lock_release(lockb);
-                V(mutexb);
+                V(mutex);
 
-                P(mutexa);
-                P(mutexb);
+                P(mutex);
                 lock_acquire(locka);
                 lock_acquire(lockb);
 
@@ -58,8 +57,7 @@ static void bill(void * unusedpointer, unsigned long unusedint)
                 
                 lock_release(lockb);
                 lock_release(locka);
-                V(mutexb);
-                V(mutexa);
+                V(mutex);
         }
 
         kprintf("Bill says 'bye'\n");
@@ -79,24 +77,23 @@ static void ben(void * unusedpointer, unsigned long unusedint)
         kprintf("Hi, I'm Ben\n");
 
         for (i = 0; i < NUM_LOOPS; i++) {
-                P(mutexa);
+                P(mutex);
                 lock_acquire(locka);
 
                 holds_locka();          /* Critical section */
                 
                 lock_release(locka);
-                V(mutexa);
+                V(mutex);
 
-                P(mutexb);
+                P(mutex);
                 lock_acquire(lockb);
                 
                 holds_lockb();          /* Critical section */
                 
                 lock_release(lockb);
-                V(mutexb);
+                V(mutex);
 
-                P(mutexa);
-                P(mutexb);
+                P(mutex);
                 lock_acquire(lockb);
                 lock_acquire(locka);
 
@@ -106,8 +103,7 @@ static void ben(void * unusedpointer, unsigned long unusedint)
 
                 lock_release(locka);
                 lock_release(lockb);
-                V(mutexb);
-                V(mutexa);
+                V(mutex);
         }
 
         kprintf("Ben says 'bye'\n");
@@ -141,8 +137,7 @@ int twolocks (int data1, char ** data2)
         KASSERT(lockb != 0);
 
         /* create a set of mutexs for each lock */
-        mutexa = sem_create("mutex_a", 1);
-        mutexb = sem_create("mutex_b", 1);
+        mutex = sem_create("mutex", 1);
 
         error = thread_fork("bill thread", NULL, &bill, NULL, 0); /* start
                                                                      Bill */
