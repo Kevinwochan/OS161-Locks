@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "synch.h": "c"
+        "synch.h": "c",
+        "producerconsumer_driver.h": "c"
     }
 }
