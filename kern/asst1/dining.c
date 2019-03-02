@@ -11,8 +11,28 @@
  * Declare any data structures you might need to synchronise 
  * your forks here.
  */
+enum {
+        THNIKING = 0,
+        HUNGRY = 1,
+        EATING = 2,
+};
+struct semaphore* philosopherSems[NUM_PHILOSOPHERS];
+struct semaphore *mutex;
+static int philosopherStates[NUM_PHILOSOPHERS];
 
 
+void test(unsigned long phil_num);
+void test(unsigned long phil_num)
+{
+    //kprintf("%lu testing for forks\n", phil_num);
+    if (philosopherStates[phil_num] == HUNGRY
+        && philosopherStates[(phil_num-1) % NUM_PHILOSOPHERS] != EATING
+        && philosopherStates[(phil_num+1) % NUM_PHILOSOPHERS] != EATING
+        ){
+            philosopherStates[phil_num] = EATING;
+            V(philosopherSems[phil_num]);
+    }
+}
 
 
 /*
@@ -25,7 +45,12 @@
 
 void take_forks(unsigned long phil_num)
 {
-    (void) phil_num;
+    //kprintf("%lu: taking forks\n", phil_num);
+    P(mutex);
+    philosopherStates[phil_num] = HUNGRY;
+    test(phil_num);
+    V(mutex);
+    P(philosopherSems[phil_num]);
 }
 
 
@@ -36,7 +61,12 @@ void take_forks(unsigned long phil_num)
 
 void put_forks(unsigned long phil_num)
 {
-    (void) phil_num;
+    //kprintf("%lu: putting forks down\n",phil_num);
+    P(mutex);
+    philosopherStates[phil_num] = THNIKING;
+    test((phil_num-1) % NUM_PHILOSOPHERS);
+    test((phil_num+1) % NUM_PHILOSOPHERS);
+    V(mutex);
 }
 
 
@@ -47,6 +77,13 @@ void put_forks(unsigned long phil_num)
 
 void create_forks()
 {
+    mutex = sem_create("mutex", 1);
+    for (int i = 0; i<NUM_PHILOSOPHERS; i++){
+        philosopherSems[i] = sem_create("philosopher_sem_", 1);
+        if (!philosopherSems[i]){
+            panic ("Dining Philosophers: %d sem create failed", i);
+        }
+    }
 
 }
 
@@ -58,5 +95,8 @@ void create_forks()
 
 void destroy_forks()
 {
-    
+    for (int i = 0; i<NUM_PHILOSOPHERS; i++){
+        sem_destroy(philosopherSems[i]);
+    }
+    sem_destroy(mutex);
 }
