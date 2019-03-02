@@ -34,13 +34,11 @@ static void bill(void * unusedpointer, unsigned long unusedint)
                 holds_locka();          /* Critical section */
                 
                 lock_release(locka);
-
                 lock_acquire(lockb);
                 
                 holds_lockb();          /* Critical section */
                 
                 lock_release(lockb);
-
                 lock_acquire(locka);
                 lock_acquire(lockb);
 
@@ -75,13 +73,11 @@ static void ben(void * unusedpointer, unsigned long unusedint)
                 holds_locka();          /* Critical section */
                 
                 lock_release(locka);
-
                 lock_acquire(lockb);
                 
                 holds_lockb();          /* Critical section */
                 
                 lock_release(lockb);
-
                 lock_acquire(locka);
                 lock_acquire(lockb);
 
