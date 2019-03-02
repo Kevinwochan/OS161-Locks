@@ -14,7 +14,7 @@
 
 data_item_t * item_buffer[BUFFER_SIZE];
 struct semaphore *empty, *full, *mutex;
-volatile int empty_slot;
+volatile int empty_slot, oldest_slot;
 
 
 /* consumer_receive() is called by a consumer to request more data. It
@@ -27,7 +27,8 @@ data_item_t * consumer_receive(void)
 
         P(full);        // decrement the amount of full slots
         P(mutex);       // BEGIN critical region, accessing item buffer array
-        item = item_buffer[--empty_slot];
+        item = item_buffer[oldest_slot++];
+        oldest_slot %= BUFFER_SIZE;
         V(mutex);       // END Critical region
         V(empty);       // increment the amount of empty slots
 
@@ -42,6 +43,7 @@ void producer_send(data_item_t *item)
         P(empty);       // decrement the amount of empty slots, sleep if empty
         P(mutex);       // BEGIN critical region, accessing item buffer array
         item_buffer[empty_slot++] = item;
+        empty_slot %= BUFFER_SIZE;
         V(mutex);       // END Critical region
         V(full);        // increment the amount of full slots and wake up consumer
 }
@@ -54,7 +56,7 @@ void producer_send(data_item_t *item)
 
 void producerconsumer_startup(void)
 {
-        empty_slot = 0;
+        empty_slot = 0, oldest_slot = 0;
         mutex = sem_create("mutex", 1);
         empty = sem_create("empty", BUFFER_SIZE);
         full = sem_create("full", 0);
